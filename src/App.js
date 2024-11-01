@@ -5,7 +5,8 @@ import {
   Dropdown,
   Button,
   Radio,
-  AutoComplete,
+  Input,
+  AutoComplete, // Исправлен импорт
   DatePicker,
   Pagination,
   Checkbox,
@@ -20,9 +21,9 @@ const App = () => {
   const [widgetType, setWidgetType] = useState('match');
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Удалена кнопка "Сбросить виджет"
   const menu = (
     <Menu>
-      <Menu.Item key="reset">Сбросить виджет</Menu.Item>
       <Menu.Item key="delete">Удалить виджет</Menu.Item>
     </Menu>
   );
@@ -76,7 +77,7 @@ const App = () => {
     },
   ];
 
-  // State variables for filters and selections
+  // Состояния фильтров и выбранных элементов
   const [clubSearchText, setClubSearchText] = useState('');
   const [leagueSearchText, setLeagueSearchText] = useState('');
   const [alreadyAdded, setAlreadyAdded] = useState(false);
@@ -86,7 +87,7 @@ const App = () => {
   const [selectedClubs, setSelectedClubs] = useState({});
   const [selectedMatches, setSelectedMatches] = useState({});
 
-  // Suggestions for AutoComplete
+  // Подсказки для AutoComplete
   const [clubSuggestions, setClubSuggestions] = useState([]);
   const [leagueSuggestions, setLeagueSuggestions] = useState([]);
 
@@ -106,7 +107,7 @@ const App = () => {
     setLeagueSuggestions(suggestions);
   };
 
-  // Filtered data based on filters
+  // Фильтрация данных на основе фильтров
   const matchesDataFiltered = matchesData.filter((match) => {
     let clubMatch = true;
     if (clubSearchText) {
@@ -149,7 +150,19 @@ const App = () => {
         </div>
       </Header>
       <Content style={{ padding: '20px' }}>
-        <div>
+        {/* Добавлен текст "Виджет опубликован" */}
+        <div
+          style={{
+            marginTop: '20px',
+            textAlign: 'center',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: 'green',
+          }}
+        >
+          Виджет опубликован
+        </div>
+        <div style={{ marginTop: '20px' }}>
           <h2>Тип виджета</h2>
           <Radio.Group value={widgetType} onChange={onWidgetTypeChange}>
             <Radio.Button value="match">Матч</Radio.Button>
@@ -225,14 +238,13 @@ const App = () => {
           )}
           {widgetType === 'table' && (
             <div>
-              {/* Меню фильтрации */}
+              {/* Меню фильтрации для лиг (без подсказок) */}
               <div style={{ marginBottom: '20px' }}>
-                <AutoComplete
+                <Input.Search
                   style={{ width: 200, marginRight: '10px' }}
                   placeholder="Поиск по названию лиги"
-                  onSearch={handleLeagueSearch}
-                  onSelect={(value) => setLeagueSearchText(value)}
-                  options={leagueSuggestions}
+                  onSearch={(value) => setLeagueSearchText(value)}
+                  onChange={(e) => setLeagueSearchText(e.target.value)}
                   allowClear
                 />
                 <Checkbox
