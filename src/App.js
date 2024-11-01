@@ -5,7 +5,7 @@ import {
   Dropdown,
   Button,
   Radio,
-  Input,
+  AutoComplete,
   DatePicker,
   Pagination,
   Checkbox,
@@ -86,6 +86,26 @@ const App = () => {
   const [selectedClubs, setSelectedClubs] = useState({});
   const [selectedMatches, setSelectedMatches] = useState({});
 
+  // Suggestions for AutoComplete
+  const [clubSuggestions, setClubSuggestions] = useState([]);
+  const [leagueSuggestions, setLeagueSuggestions] = useState([]);
+
+  const handleClubSearch = (value) => {
+    setClubSearchText(value);
+    const suggestions = clubsData
+      .filter((club) => club.name.toLowerCase().includes(value.toLowerCase()))
+      .map((club) => ({ value: club.name }));
+    setClubSuggestions(suggestions);
+  };
+
+  const handleLeagueSearch = (value) => {
+    setLeagueSearchText(value);
+    const suggestions = leaguesData
+      .filter((league) => league.name.toLowerCase().includes(value.toLowerCase()))
+      .map((league) => ({ value: league.name }));
+    setLeagueSuggestions(suggestions);
+  };
+
   // Filtered data based on filters
   const matchesDataFiltered = matchesData.filter((match) => {
     let clubMatch = true;
@@ -105,18 +125,6 @@ const App = () => {
       alreadyAddedMatch = selectedMatches[match.key];
     }
     return clubMatch && leagueMatch && dateMatch && alreadyAddedMatch;
-  });
-
-  const clubsDataFiltered = clubsData.filter((club) => {
-    let nameMatch = true;
-    if (clubSearchText) {
-      nameMatch = club.name.toLowerCase().includes(clubSearchText.toLowerCase());
-    }
-    let alreadyAddedMatch = true;
-    if (alreadyAdded) {
-      alreadyAddedMatch = selectedClubs[club.key];
-    }
-    return nameMatch && alreadyAddedMatch;
   });
 
   const leaguesDataFiltered = leaguesData.filter((league) => {
@@ -154,17 +162,21 @@ const App = () => {
             <div>
               {/* Меню фильтрации */}
               <div style={{ marginBottom: '20px' }}>
-                <Input.Search
+                <AutoComplete
                   style={{ width: 200, marginRight: '10px' }}
                   placeholder="Фильтр по клубу"
-                  onSearch={(value) => setClubSearchText(value)}
-                  onChange={(e) => setClubSearchText(e.target.value)}
+                  onSearch={handleClubSearch}
+                  onSelect={(value) => setClubSearchText(value)}
+                  options={clubSuggestions}
+                  allowClear
                 />
-                <Input.Search
+                <AutoComplete
                   style={{ width: 200, marginRight: '10px' }}
                   placeholder="Фильтр по лиге"
-                  onSearch={(value) => setLeagueSearchText(value)}
-                  onChange={(e) => setLeagueSearchText(e.target.value)}
+                  onSearch={handleLeagueSearch}
+                  onSelect={(value) => setLeagueSearchText(value)}
+                  options={leagueSuggestions}
+                  allowClear
                 />
                 <DatePicker
                   placeholder="Фильтрация по дате"
@@ -215,11 +227,13 @@ const App = () => {
             <div>
               {/* Меню фильтрации */}
               <div style={{ marginBottom: '20px' }}>
-                <Input.Search
+                <AutoComplete
                   style={{ width: 200, marginRight: '10px' }}
                   placeholder="Поиск по названию лиги"
-                  onSearch={(value) => setLeagueSearchText(value)}
-                  onChange={(e) => setLeagueSearchText(e.target.value)}
+                  onSearch={handleLeagueSearch}
+                  onSelect={(value) => setLeagueSearchText(value)}
+                  options={leagueSuggestions}
+                  allowClear
                 />
                 <Checkbox
                   style={{ marginTop: '10px' }}
