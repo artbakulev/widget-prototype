@@ -6,7 +6,7 @@ import {
   Button,
   Radio,
   Input,
-  AutoComplete, // Исправлен импорт
+  AutoComplete,
   DatePicker,
   Pagination,
   Checkbox,
@@ -20,11 +20,19 @@ const { Header, Content, Footer } = Layout;
 const App = () => {
   const [widgetType, setWidgetType] = useState('match');
   const [hasChanges, setHasChanges] = useState(false);
+  const [widgetPublished, setWidgetPublished] = useState(true); // Новое состояние для публикации виджета
 
-  // Удалена кнопка "Сбросить виджет"
   const menu = (
     <Menu>
-      <Menu.Item key="delete">Удалить виджет</Menu.Item>
+      <Menu.Item
+        key="delete"
+        onClick={() => {
+          setWidgetPublished(false);
+          setHasChanges(true);
+        }}
+      >
+        Удалить виджет
+      </Menu.Item>
     </Menu>
   );
 
@@ -36,6 +44,7 @@ const App = () => {
   const saveAndPublish = () => {
     // Логика сохранения
     setHasChanges(false);
+    setWidgetPublished(true); // При сохранении виджет публикуется
   };
 
   // Пример данных для лиг, клубов и матчей
@@ -80,7 +89,7 @@ const App = () => {
   // Состояния фильтров и выбранных элементов
   const [clubSearchText, setClubSearchText] = useState('');
   const [leagueSearchText, setLeagueSearchText] = useState('');
-  const [alreadyAdded, setAlreadyAdded] = useState(false);
+  const [showIncludedOnly, setShowIncludedOnly] = useState(false); // Изменено
   const [selectedDate, setSelectedDate] = useState(null);
 
   const [selectedLeagues, setSelectedLeagues] = useState({});
@@ -121,11 +130,11 @@ const App = () => {
     if (selectedDate) {
       dateMatch = match.time.startsWith(selectedDate.format('YYYY-MM-DD'));
     }
-    let alreadyAddedMatch = true;
-    if (alreadyAdded) {
-      alreadyAddedMatch = selectedMatches[match.key];
+    let includedMatch = true;
+    if (showIncludedOnly) {
+      includedMatch = selectedMatches[match.key];
     }
-    return clubMatch && leagueMatch && dateMatch && alreadyAddedMatch;
+    return clubMatch && leagueMatch && dateMatch && includedMatch;
   });
 
   const leaguesDataFiltered = leaguesData.filter((league) => {
@@ -133,11 +142,11 @@ const App = () => {
     if (leagueSearchText) {
       nameMatch = league.name.toLowerCase().includes(leagueSearchText.toLowerCase());
     }
-    let alreadyAddedMatch = true;
-    if (alreadyAdded) {
-      alreadyAddedMatch = selectedLeagues[league.key];
+    let includedMatch = true;
+    if (showIncludedOnly) {
+      includedMatch = selectedLeagues[league.key];
     }
-    return nameMatch && alreadyAddedMatch;
+    return nameMatch && includedMatch;
   });
 
   return (
@@ -150,17 +159,17 @@ const App = () => {
         </div>
       </Header>
       <Content style={{ padding: '20px' }}>
-        {/* Добавлен текст "Виджет опубликован" */}
+        {/* Статус виджета */}
         <div
           style={{
             marginTop: '20px',
             textAlign: 'center',
             fontSize: '16px',
             fontWeight: 'bold',
-            color: 'green',
+            color: widgetPublished ? 'green' : 'gray',
           }}
         >
-          Виджет опубликован
+          {widgetPublished ? 'Виджет опубликован' : 'Виджет неопубликован'}
         </div>
         <div style={{ marginTop: '20px' }}>
           <h2>Тип виджета</h2>
@@ -196,13 +205,12 @@ const App = () => {
                   style={{ marginRight: '10px' }}
                   onChange={(date) => setSelectedDate(date)}
                 />
-                <Checkbox
+                <Button
                   style={{ marginTop: '10px' }}
-                  checked={alreadyAdded}
-                  onChange={(e) => setAlreadyAdded(e.target.checked)}
+                  onClick={() => setShowIncludedOnly(!showIncludedOnly)}
                 >
-                  Уже добавлен
-                </Checkbox>
+                  {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
+                </Button>
               </div>
               {/* Разделитель между фильтрами и списком */}
               <Divider />
@@ -247,13 +255,12 @@ const App = () => {
                   onChange={(e) => setLeagueSearchText(e.target.value)}
                   allowClear
                 />
-                <Checkbox
+                <Button
                   style={{ marginTop: '10px' }}
-                  checked={alreadyAdded}
-                  onChange={(e) => setAlreadyAdded(e.target.checked)}
+                  onClick={() => setShowIncludedOnly(!showIncludedOnly)}
                 >
-                  Уже добавлен
-                </Checkbox>
+                  {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
+                </Button>
               </div>
               <Divider />
               {/* Список лиг */}
