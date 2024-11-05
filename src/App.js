@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
   Layout,
-  Menu,
-  Dropdown,
   Button,
   Radio,
   Input,
@@ -12,42 +10,21 @@ import {
   Checkbox,
   List,
   Divider,
+  Tabs,
 } from 'antd';
 import { EllipsisOutlined } from '@ant-design/icons';
 
 const { Header, Content, Footer } = Layout;
+const { TabPane } = Tabs;
 
 const App = () => {
+  // Состояния приложения
   const [widgetType, setWidgetType] = useState('match');
   const [hasChanges, setHasChanges] = useState(false);
-  const [widgetPublished, setWidgetPublished] = useState(true); // Новое состояние для публикации виджета
+  const [widgetPublished, setWidgetPublished] = useState(false); // Начальное состояние - виджет неопубликован
+  const [hasBeenPublished, setHasBeenPublished] = useState(false); // Для активации кнопки удаления
 
-  const menu = (
-    <Menu>
-      <Menu.Item
-        key="delete"
-        onClick={() => {
-          setWidgetPublished(false);
-          setHasChanges(true);
-        }}
-      >
-        Удалить виджет
-      </Menu.Item>
-    </Menu>
-  );
-
-  const onWidgetTypeChange = (e) => {
-    setWidgetType(e.target.value);
-    setHasChanges(true);
-  };
-
-  const saveAndPublish = () => {
-    // Логика сохранения
-    setHasChanges(false);
-    setWidgetPublished(true); // При сохранении виджет публикуется
-  };
-
-  // Пример данных для лиг, клубов и матчей
+  // Данные для лиг, клубов и матчей
   const leaguesData = [
     { key: '1', name: 'Английская Премьер-Лига' },
     { key: '2', name: 'Ла Лига' },
@@ -89,7 +66,7 @@ const App = () => {
   // Состояния фильтров и выбранных элементов
   const [clubSearchText, setClubSearchText] = useState('');
   const [leagueSearchText, setLeagueSearchText] = useState('');
-  const [showIncludedOnly, setShowIncludedOnly] = useState(false); // Изменено
+  const [showIncludedOnly, setShowIncludedOnly] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
   const [selectedLeagues, setSelectedLeagues] = useState({});
@@ -99,6 +76,22 @@ const App = () => {
   // Подсказки для AutoComplete
   const [clubSuggestions, setClubSuggestions] = useState([]);
   const [leagueSuggestions, setLeagueSuggestions] = useState([]);
+
+  const onWidgetTypeChange = (e) => {
+    setWidgetType(e.target.value);
+    setHasChanges(true);
+  };
+
+  const saveAndPublish = () => {
+    setHasChanges(false);
+    setWidgetPublished(true);
+    setHasBeenPublished(true); // Теперь кнопка удаления будет активна
+  };
+
+  const deleteWidget = () => {
+    setWidgetPublished(false);
+    setHasChanges(true);
+  };
 
   const handleClubSearch = (value) => {
     setClubSearchText(value);
@@ -149,14 +142,22 @@ const App = () => {
     return nameMatch && includedMatch;
   });
 
+  const clubsDataFiltered = clubsData.filter((club) => {
+    let nameMatch = true;
+    if (clubSearchText) {
+      nameMatch = club.name.toLowerCase().includes(clubSearchText.toLowerCase());
+    }
+    let includedMatch = true;
+    if (showIncludedOnly) {
+      includedMatch = selectedClubs[club.key];
+    }
+    return nameMatch && includedMatch;
+  });
+
   return (
     <Layout>
       <Header style={{ background: '#fff' }}>
-        <div style={{ float: 'right' }}>
-          <Dropdown overlay={menu} trigger={['click']}>
-            <Button icon={<EllipsisOutlined />} />
-          </Dropdown>
-        </div>
+        {/* Можно добавить заголовок или оставить пустым */}
       </Header>
       <Content style={{ padding: '20px' }}>
         {/* Статус виджета */}
@@ -179,116 +180,248 @@ const App = () => {
             <Radio.Button value="table">Таблица</Radio.Button>
           </Radio.Group>
         </div>
+
+        {/* Вкладки сущностей */}
         <div style={{ marginTop: '20px' }}>
           {(widgetType === 'match' || widgetType === 'matches') && (
-            <div>
-              {/* Меню фильтрации */}
-              <div style={{ marginBottom: '20px' }}>
-                <AutoComplete
-                  style={{ width: 200, marginRight: '10px' }}
-                  placeholder="Фильтр по клубу"
-                  onSearch={handleClubSearch}
-                  onSelect={(value) => setClubSearchText(value)}
-                  options={clubSuggestions}
-                  allowClear
+            <Tabs defaultActiveKey="leagues">
+              <TabPane tab="Лиги" key="leagues">
+                {/* Содержимое для лиг */}
+                <div style={{ marginBottom: '20px' }}>
+                  <Input.Search
+                    style={{ width: 200, marginRight: '10px' }}
+                    placeholder="Поиск по названию лиги"
+                    onSearch={(value) => setLeagueSearchText(value)}
+                    onChange={(e) => setLeagueSearchText(e.target.value)}
+                    allowClear
+                  />
+                  <Button
+                    style={{ marginTop: '10px' }}
+                    onClick={() => setShowIncludedOnly(!showIncludedOnly)}
+                  >
+                    {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
+                  </Button>
+                </div>
+                <Divider />
+                <List
+                  dataSource={leaguesDataFiltered}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Checkbox
+                        checked={selectedLeagues[item.key] || false}
+                        onChange={(e) => {
+                          setSelectedLeagues({
+                            ...selectedLeagues,
+                            [item.key]: e.target.checked,
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        {item.name}
+                      </Checkbox>
+                    </List.Item>
+                  )}
                 />
-                <AutoComplete
-                  style={{ width: 200, marginRight: '10px' }}
-                  placeholder="Фильтр по лиге"
-                  onSearch={handleLeagueSearch}
-                  onSelect={(value) => setLeagueSearchText(value)}
-                  options={leagueSuggestions}
-                  allowClear
-                />
-                <DatePicker
-                  placeholder="Фильтрация по дате"
-                  style={{ marginRight: '10px' }}
-                  onChange={(date) => setSelectedDate(date)}
-                />
-                <Button
+                <Pagination
+                  defaultCurrent={1}
+                  total={leaguesDataFiltered.length}
                   style={{ marginTop: '10px' }}
-                  onClick={() => setShowIncludedOnly(!showIncludedOnly)}
-                >
-                  {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
-                </Button>
-              </div>
-              {/* Разделитель между фильтрами и списком */}
-              <Divider />
-              {/* Список матчей */}
-              <List
-                dataSource={matchesDataFiltered}
-                renderItem={(item) => (
-                  <List.Item>
-                    <Checkbox
-                      checked={selectedMatches[item.key] || false}
-                      onChange={(e) => {
-                        setSelectedMatches({
-                          ...selectedMatches,
-                          [item.key]: e.target.checked,
-                        });
-                        setHasChanges(true);
-                      }}
-                    >
-                      <div>
-                        <div>{item.teams}</div>
-                        <div>{item.time}</div>
-                      </div>
-                    </Checkbox>
-                  </List.Item>
-                )}
-              />
-              <Pagination
-                defaultCurrent={1}
-                total={matchesDataFiltered.length}
-                style={{ marginTop: '10px' }}
-              />
-            </div>
+                />
+              </TabPane>
+              <TabPane tab="Клубы" key="clubs">
+                {/* Содержимое для клубов */}
+                <div style={{ marginBottom: '20px' }}>
+                  <Input.Search
+                    style={{ width: 200, marginRight: '10px' }}
+                    placeholder="Поиск по названию клуба"
+                    onSearch={(value) => setClubSearchText(value)}
+                    onChange={(e) => setClubSearchText(e.target.value)}
+                    allowClear
+                  />
+                  <Button
+                    style={{ marginTop: '10px' }}
+                    onClick={() => setShowIncludedOnly(!showIncludedOnly)}
+                  >
+                    {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
+                  </Button>
+                </div>
+                <Divider />
+                <List
+                  dataSource={clubsDataFiltered}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Checkbox
+                        checked={selectedClubs[item.key] || false}
+                        onChange={(e) => {
+                          setSelectedClubs({
+                            ...selectedClubs,
+                            [item.key]: e.target.checked,
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        {item.name}
+                      </Checkbox>
+                    </List.Item>
+                  )}
+                />
+                <Pagination
+                  defaultCurrent={1}
+                  total={clubsDataFiltered.length}
+                  style={{ marginTop: '10px' }}
+                />
+              </TabPane>
+              <TabPane tab="Матчи" key="matches">
+                {/* Содержимое для матчей */}
+                <div style={{ marginBottom: '20px' }}>
+                  <AutoComplete
+                    style={{ width: 200, marginRight: '10px' }}
+                    placeholder="Фильтр по клубу"
+                    onSearch={handleClubSearch}
+                    onSelect={(value) => setClubSearchText(value)}
+                    options={clubSuggestions}
+                    allowClear
+                  />
+                  <AutoComplete
+                    style={{ width: 200, marginRight: '10px' }}
+                    placeholder="Фильтр по лиге"
+                    onSearch={handleLeagueSearch}
+                    onSelect={(value) => setLeagueSearchText(value)}
+                    options={leagueSuggestions}
+                    allowClear
+                  />
+                  <DatePicker
+                    placeholder="Фильтрация по дате"
+                    style={{ marginRight: '10px' }}
+                    onChange={(date) => setSelectedDate(date)}
+                  />
+                  <Button
+                    style={{ marginTop: '10px' }}
+                    onClick={() => setShowIncludedOnly(!showIncludedOnly)}
+                  >
+                    {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
+                  </Button>
+                </div>
+                <Divider />
+                <List
+                  dataSource={matchesDataFiltered}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Checkbox
+                        checked={selectedMatches[item.key] || false}
+                        onChange={(e) => {
+                          setSelectedMatches({
+                            ...selectedMatches,
+                            [item.key]: e.target.checked,
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        <div>
+                          <div>{item.teams}</div>
+                          <div>{item.time}</div>
+                        </div>
+                      </Checkbox>
+                    </List.Item>
+                  )}
+                />
+                <Pagination
+                  defaultCurrent={1}
+                  total={matchesDataFiltered.length}
+                  style={{ marginTop: '10px' }}
+                />
+              </TabPane>
+            </Tabs>
           )}
           {widgetType === 'table' && (
-            <div>
-              {/* Меню фильтрации для лиг (без подсказок) */}
-              <div style={{ marginBottom: '20px' }}>
-                <Input.Search
-                  style={{ width: 200, marginRight: '10px' }}
-                  placeholder="Поиск по названию лиги"
-                  onSearch={(value) => setLeagueSearchText(value)}
-                  onChange={(e) => setLeagueSearchText(e.target.value)}
-                  allowClear
+            <Tabs defaultActiveKey="leagues">
+              <TabPane tab="Лиги" key="leagues">
+                {/* Содержимое для лиг */}
+                <div style={{ marginBottom: '20px' }}>
+                  <Input.Search
+                    style={{ width: 200, marginRight: '10px' }}
+                    placeholder="Поиск по названию лиги"
+                    onSearch={(value) => setLeagueSearchText(value)}
+                    onChange={(e) => setLeagueSearchText(e.target.value)}
+                    allowClear
+                  />
+                  <Button
+                    style={{ marginTop: '10px' }}
+                    onClick={() => setShowIncludedOnly(!showIncludedOnly)}
+                  >
+                    {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
+                  </Button>
+                </div>
+                <Divider />
+                <List
+                  dataSource={leaguesDataFiltered}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Checkbox
+                        checked={selectedLeagues[item.key] || false}
+                        onChange={(e) => {
+                          setSelectedLeagues({
+                            ...selectedLeagues,
+                            [item.key]: e.target.checked,
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        {item.name}
+                      </Checkbox>
+                    </List.Item>
+                  )}
                 />
-                <Button
+                <Pagination
+                  defaultCurrent={1}
+                  total={leaguesDataFiltered.length}
                   style={{ marginTop: '10px' }}
-                  onClick={() => setShowIncludedOnly(!showIncludedOnly)}
-                >
-                  {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
-                </Button>
-              </div>
-              <Divider />
-              {/* Список лиг */}
-              <List
-                dataSource={leaguesDataFiltered}
-                renderItem={(item) => (
-                  <List.Item>
-                    <Checkbox
-                      checked={selectedLeagues[item.key] || false}
-                      onChange={(e) => {
-                        setSelectedLeagues({
-                          ...selectedLeagues,
-                          [item.key]: e.target.checked,
-                        });
-                        setHasChanges(true);
-                      }}
-                    >
-                      {item.name}
-                    </Checkbox>
-                  </List.Item>
-                )}
-              />
-              <Pagination
-                defaultCurrent={1}
-                total={leaguesDataFiltered.length}
-                style={{ marginTop: '10px' }}
-              />
-            </div>
+                />
+              </TabPane>
+              <TabPane tab="Клубы" key="clubs">
+                {/* Содержимое для клубов */}
+                <div style={{ marginBottom: '20px' }}>
+                  <Input.Search
+                    style={{ width: 200, marginRight: '10px' }}
+                    placeholder="Поиск по названию клуба"
+                    onSearch={(value) => setClubSearchText(value)}
+                    onChange={(e) => setClubSearchText(e.target.value)}
+                    allowClear
+                  />
+                  <Button
+                    style={{ marginTop: '10px' }}
+                    onClick={() => setShowIncludedOnly(!showIncludedOnly)}
+                  >
+                    {showIncludedOnly ? 'Показать все' : 'Показать включенные'}
+                  </Button>
+                </div>
+                <Divider />
+                <List
+                  dataSource={clubsDataFiltered}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Checkbox
+                        checked={selectedClubs[item.key] || false}
+                        onChange={(e) => {
+                          setSelectedClubs({
+                            ...selectedClubs,
+                            [item.key]: e.target.checked,
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        {item.name}
+                      </Checkbox>
+                    </List.Item>
+                  )}
+                />
+                <Pagination
+                  defaultCurrent={1}
+                  total={clubsDataFiltered.length}
+                  style={{ marginTop: '10px' }}
+                />
+              </TabPane>
+            </Tabs>
           )}
         </div>
       </Content>
@@ -297,8 +430,16 @@ const App = () => {
           type={hasChanges ? 'primary' : 'default'}
           disabled={!hasChanges}
           onClick={saveAndPublish}
+          style={{ marginRight: '10px' }}
         >
           Сохранить и опубликовать
+        </Button>
+        <Button
+          type="danger"
+          onClick={deleteWidget}
+          disabled={!hasBeenPublished}
+        >
+          Удалить виджет
         </Button>
       </Footer>
     </Layout>
